@@ -1,8 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Card,
   CardContent,
@@ -19,6 +20,16 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/dashboard');
+      }
+    };
+    checkUser();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,14 +49,25 @@ export default function Index() {
       return;
     }
 
-    // TODO: Implement actual login logic
-    setTimeout(() => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } else {
       toast({
         title: "Success!",
         description: "Welcome to NEU OJT APP",
       });
-      setIsLoading(false);
-    }, 1000);
+      navigate('/dashboard');
+    }
+    setIsLoading(false);
   };
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -77,14 +99,24 @@ export default function Index() {
       return;
     }
 
-    // TODO: Implement actual registration logic
-    setTimeout(() => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } else {
       toast({
         title: "Account created!",
         description: "Please check your email to verify your account",
       });
-      setIsLoading(false);
-    }, 1000);
+    }
+    setIsLoading(false);
   };
 
   return (

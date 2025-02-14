@@ -55,10 +55,16 @@ export default function Index() {
     });
 
     if (error) {
+      let errorMessage = "An error occurred during login.";
+      
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password. If you haven't registered yet, please sign up first. If you just registered, please check your email for verification.";
+      }
+
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message,
+        title: "Login Failed",
+        description: errorMessage,
       });
     } else {
       toast({
@@ -99,7 +105,7 @@ export default function Index() {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -107,13 +113,13 @@ export default function Index() {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Registration Failed",
         description: error.message,
       });
     } else {
       toast({
         title: "Account created!",
-        description: "Please check your email to verify your account",
+        description: "Please check your email to verify your account. After verification, you can log in.",
       });
     }
     setIsLoading(false);

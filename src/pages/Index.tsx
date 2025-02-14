@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -136,7 +135,7 @@ export default function Index() {
         <Card className="backdrop-blur-sm bg-white/90 shadow-xl border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center text-gray-800">
-              NEU OJT APP
+              SALAYSAY TRACKER APP
             </CardTitle>
             <CardDescription className="text-center text-gray-600">
               Enter your details to access your account

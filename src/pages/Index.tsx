@@ -16,6 +16,17 @@ export default function Index() {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        const userEmail = session.user.email;
+        if (!userEmail?.endsWith('@neu.edu.ph')) {
+          // Sign out if not an NEU email
+          await supabase.auth.signOut();
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: "Please sign in with your NEU email address (@neu.edu.ph)",
+          });
+          return;
+        }
         navigate('/dashboard');
       }
     };

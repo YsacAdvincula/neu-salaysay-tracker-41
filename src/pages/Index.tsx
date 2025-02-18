@@ -32,6 +32,7 @@ export default function Index() {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
+            hd: 'neu.edu.ph', // This restricts to NEU email domains
           },
         },
       });
@@ -66,7 +67,7 @@ export default function Index() {
           <CardContent className="p-0 space-y-6">
             <div className="flex justify-center">
               <img 
-                src="/lovable-uploads/1124a8c6-3ef9-421e-9bb9-00387d87309b.png" 
+                src="/lovable-uploads/1662da6e-c745-4b96-a54c-d177ff86c299.png" 
                 alt="NEU Logo" 
                 className="w-24 h-24"
               />

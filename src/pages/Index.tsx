@@ -24,24 +24,34 @@ export default function Index() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: error.message,
+        });
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Authentication Error",
-        description: error.message,
+        description: "An unexpected error occurred during sign in.",
       });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

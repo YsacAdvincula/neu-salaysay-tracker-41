@@ -27,6 +27,34 @@ export default function Index() {
           });
           return;
         }
+        // Check if profile exists
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profile) {
+          // Create profile if it doesn't exist
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: session.user.id,
+                email: session.user.email,
+                full_name: session.user.user_metadata.full_name || null,
+              }
+            ]);
+
+          if (profileError) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to create user profile.",
+            });
+            return;
+          }
+        }
         navigate('/dashboard');
       }
     };

@@ -75,6 +75,8 @@ export default function Index() {
             prompt: 'consent',
             hd: 'neu.edu.ph', // This restricts to NEU email domains
           },
+          scopes: 'email profile',
+          filter: { domain: 'neu.edu.ph' }, // Additional domain restriction
         },
       });
 
@@ -82,7 +84,7 @@ export default function Index() {
         toast({
           variant: "destructive",
           title: "Authentication Error",
-          description: error.message,
+          description: "Please use your NEU email address (@neu.edu.ph) to sign in.",
         });
       }
     } catch (error) {

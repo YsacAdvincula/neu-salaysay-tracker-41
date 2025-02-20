@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,6 @@ export default function Index() {
         }
         
         // Only proceed with profile check/creation for NEU emails
-        // Check if profile exists
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -37,7 +36,6 @@ export default function Index() {
           .single();
 
         if (!profile && userEmail.endsWith('@neu.edu.ph')) {
-          // Create profile only for NEU emails
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -60,7 +58,21 @@ export default function Index() {
         navigate('/dashboard');
       }
     };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        await checkUser();
+      }
+    });
+
+    // Initial check
     checkUser();
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
 
   const handleGoogleSignIn = async () => {

@@ -27,6 +27,8 @@ export default function Index() {
           });
           return;
         }
+        
+        // Only proceed with profile check/creation for NEU emails
         // Check if profile exists
         const { data: profile } = await supabase
           .from('profiles')
@@ -34,14 +36,14 @@ export default function Index() {
           .eq('id', session.user.id)
           .single();
 
-        if (!profile) {
-          // Create profile if it doesn't exist
+        if (!profile && userEmail.endsWith('@neu.edu.ph')) {
+          // Create profile only for NEU emails
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
               {
                 id: session.user.id,
-                email: session.user.email,
+                email: userEmail,
                 full_name: session.user.user_metadata.full_name || null,
               }
             ]);
@@ -59,7 +61,7 @@ export default function Index() {
       }
     };
     checkUser();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);

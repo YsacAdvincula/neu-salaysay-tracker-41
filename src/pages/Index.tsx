@@ -17,68 +17,45 @@ export default function Index() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const userEmail = session.user.email;
-        if (!userEmail?.endsWith('@neu.edu.ph')) {
-          // Sign out if not an NEU email
-          await supabase.auth.signOut();
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "Please sign in with your NEU email address (@neu.edu.ph)",
-          });
-          return;
-        }
-        
-        // Only proceed with profile check/creation for NEU emails
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (!profile && userEmail.endsWith('@neu.edu.ph')) {
-          const { error: profileError } = await supabase
+        if (userEmail?.endsWith('@neu.edu.ph')) {
+          const { data: profile } = await supabase
             .from('profiles')
-            .insert([
-              {
-                id: session.user.id,
-                email: userEmail,
-                full_name: session.user.user_metadata.full_name || null,
-              }
-            ]);
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
 
-          if (profileError) {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to create user profile.",
-            });
-            return;
+          if (!profile) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert([
+                {
+                  id: session.user.id,
+                  email: userEmail,
+                  full_name: session.user.user_metadata.full_name || null,
+                }
+              ]);
+
+            if (profileError) {
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to create user profile.",
+              });
+              return;
+            }
           }
+          navigate('/dashboard');
         }
-        navigate('/dashboard');
       }
     };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN') {
-        await checkUser();
-      }
-    });
-
-    // Initial check
     checkUser();
-
-    // Cleanup subscription
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [navigate, toast]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
@@ -86,10 +63,19 @@ export default function Index() {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-            hd: 'neu.edu.ph', // This restricts to NEU email domains
+            hd: 'neu.edu.ph',
           },
         },
       });
+
+      // If there's no error and no data, it means the popup was closed
+      if (!error && !data) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Cancelled",
+          description: "Sign in was cancelled.",
+        });
+      }
 
       if (error) {
         toast({

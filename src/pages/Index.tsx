@@ -70,13 +70,12 @@ export default function Index() {
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
+          scopes: 'email profile',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
             hd: 'neu.edu.ph', // This restricts to NEU email domains
           },
-          scopes: 'email profile',
-          filter: { domain: 'neu.edu.ph' }, // Additional domain restriction
         },
       });
 

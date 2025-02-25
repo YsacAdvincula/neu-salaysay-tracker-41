@@ -1,66 +1,90 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
+    // Check URL parameters for errors
+    const params = new URLSearchParams(location.search);
+    const errorDesc = params.get('error_description');
+    if (errorDesc) {
+      setError("Please sign in with your NEU email address (@neu.edu.ph)");
+    }
+
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const userEmail = session.user.email;
-        if (!userEmail?.endsWith('@neu.edu.ph')) {
-          // Sign out if not an NEU email
-          await supabase.auth.signOut();
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "Please sign in with your NEU email address (@neu.edu.ph)",
-          });
-          return;
+        if (userEmail?.endsWith('@neu.edu.ph')) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (!profile) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert([
+                {
+                  id: session.user.id,
+                  email: userEmail,
+                  full_name: session.user.user_metadata.full_name || null,
+                }
+              ]);
+
+            if (profileError) {
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to create user profile.",
+              });
+              return;
+            }
+          }
+          navigate('/dashboard');
         }
-        navigate('/dashboard');
       }
     };
+
     checkUser();
-  }, [navigate]);
+  }, [navigate, toast, location]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
+          scopes: 'email profile',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-            hd: 'neu.edu.ph', // This restricts to NEU email domains
+            hd: 'neu.edu.ph',
           },
         },
       });
 
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: error.message,
-        });
+        setError("Failed to sign in. Please try again.");
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: "An unexpected error occurred during sign in.",
-      });
+      setError("An unexpected error occurred during sign in.");
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +116,13 @@ export default function Index() {
                 Sign in with your NEU account to continue
               </p>
             </div>
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             <Button
               onClick={handleGoogleSignIn}

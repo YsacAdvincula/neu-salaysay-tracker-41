@@ -1,14 +1,16 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Send } from "lucide-react";
+import { UploadDialog } from "@/components/UploadDialog";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -34,11 +36,7 @@ export default function Dashboard() {
   };
 
   const handleSubmitSalaysay = () => {
-    // TODO: Implement salaysay submission functionality
-    toast({
-      title: "Coming Soon",
-      description: "Salaysay submission feature is under development."
-    });
+    setIsUploadDialogOpen(true);
   };
 
   return (
@@ -65,6 +63,10 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+      <UploadDialog 
+        isOpen={isUploadDialogOpen}
+        onClose={() => setIsUploadDialogOpen(false)}
+      />
     </div>
   );
 }

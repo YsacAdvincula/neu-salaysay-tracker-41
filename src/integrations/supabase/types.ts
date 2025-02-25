@@ -36,6 +36,56 @@ export type Database = {
         }
         Relationships: []
       }
+      salaysay_submissions: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          status: string
+          user_id: string
+          violation_type: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          status?: string
+          user_id: string
+          violation_type: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          status?: string
+          user_id?: string
+          violation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salaysay_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      violation_types: {
+        Row: {
+          id: number
+          name: string
+        }
+        Insert: {
+          id?: number
+          name: string
+        }
+        Update: {
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

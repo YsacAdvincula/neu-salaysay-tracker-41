@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Send } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -32,6 +33,14 @@ export default function Dashboard() {
     }
   };
 
+  const handleSubmitSalaysay = () => {
+    // TODO: Implement salaysay submission functionality
+    toast({
+      title: "Coming Soon",
+      description: "Salaysay submission feature is under development."
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -47,9 +56,13 @@ export default function Dashboard() {
         </div>
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             Welcome to your dashboard. This is where you'll manage your salaysay activities.
           </p>
+          <Button onClick={handleSubmitSalaysay} className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            Submit Salaysay
+          </Button>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, X, CheckCircle } from "lucide-react";
 import { useState } from "react";
@@ -80,11 +81,16 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
         )
       );
 
+      // First, check if the bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      console.log('Available buckets:', buckets);
+
       const { error, data } = await supabase.storage
         .from('salaysay-uploads')
         .upload(fileName, file);
 
       if (error) {
+        console.error('Supabase upload error:', error);
         throw error;
       }
 
@@ -99,7 +105,7 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
 
       console.log('File uploaded successfully:', data.path);
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Detailed upload error:', error);
       setUploads(prev => 
         prev.map(upload => 
           upload.file === file 
@@ -108,10 +114,20 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
         )
       );
 
+      // More specific error message based on the error type
+      let errorMessage = "There was an error uploading your file. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes("bucket")) {
+          errorMessage = "Storage bucket not found. Please contact support.";
+        } else if (error.message.includes("permission")) {
+          errorMessage = "Permission denied. Please check your authentication status.";
+        }
+      }
+
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: "There was an error uploading your file. Please try again."
+        description: errorMessage
       });
     }
   };

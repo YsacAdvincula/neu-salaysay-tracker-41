@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, X, CheckCircle } from "lucide-react";
 import { useState } from "react";
@@ -62,7 +61,7 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
     setUploads(prev => 
       prev.map(upload => 
         upload.file === file 
-          ? { ...upload, status: 'uploading' }
+          ? { ...upload, status: 'uploading', progress: 0 }
           : upload
       )
     );
@@ -72,24 +71,18 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
       
+      // Start upload
+      setUploads(prev => 
+        prev.map(upload => 
+          upload.file === file 
+            ? { ...upload, progress: 33 }
+            : upload
+        )
+      );
+
       const { error, data } = await supabase.storage
         .from('salaysay-uploads')
-        .upload(fileName, file, {
-          onUploadProgress: (progress) => {
-            const percentage = (progress.loaded / progress.total) * 100;
-            setUploads(prev => 
-              prev.map(upload => 
-                upload.file === file 
-                  ? {
-                      ...upload,
-                      progress: percentage,
-                      status: percentage >= 100 ? 'completed' : 'uploading'
-                    }
-                  : upload
-              )
-            );
-          }
-        });
+        .upload(fileName, file);
 
       if (error) {
         throw error;

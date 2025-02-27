@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, X, CheckCircle } from "lucide-react";
 import { useState } from "react";
@@ -68,9 +67,10 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
     );
 
     try {
-      // Generate a unique filename to avoid conflicts
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      // Add a timestamp to the original filename to prevent conflicts while keeping the original name
+      const timestamp = Date.now();
+      const originalName = file.name;
+      const fileName = `${timestamp}_${originalName}`;
       
       // Start upload
       setUploads(prev => 

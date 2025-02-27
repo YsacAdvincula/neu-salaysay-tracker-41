@@ -52,82 +52,92 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Upload files
-            <button 
-              onClick={onClose} 
-              className="absolute right-4 top-4 hover:bg-gray-100 rounded-full p-1"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </DialogTitle>
+          <button 
+            onClick={onClose} 
+            className="absolute right-4 top-4 hover:bg-gray-100 rounded-full p-1"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </DialogHeader>
 
         <div className="space-y-4">
-          {uploads.map((upload) => (
-            <div
-              key={upload.file.name}
-              className="flex items-center p-3 border border-gray-200 rounded-lg"
-            >
-              <div className="flex-shrink-0 mr-3">
-                <div className="text-xs font-medium bg-gray-100 px-2 py-1 rounded">
-                  PDF
-                </div>
+          {uploads.length === 0 ? (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <div className="flex flex-col items-center">
+                <label className="w-full cursor-pointer">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf"
+                    onChange={handleFileInput}
+                  />
+                  <div className="w-full text-center">
+                    <p className="text-sm text-gray-500">
+                      Drop PDF files here or{" "}
+                      <span className="text-blue-600 hover:text-blue-700">
+                        browse
+                      </span>
+                    </p>
+                  </div>
+                </label>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {upload.file.name}
-                </p>
-              </div>
-              <button
-                onClick={() => removeFile(upload.file)}
-                className="ml-2 text-gray-400 hover:text-gray-500"
+            </div>
+          ) : (
+            uploads.map((upload) => (
+              <div
+                key={upload.file.name}
+                className="flex items-center py-3 px-4 bg-white border border-gray-200 rounded-lg shadow-sm"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-            <div className="flex flex-col items-center">
-              <label className="w-full cursor-pointer">
-                <input
-                  type="file"
-                  className="hidden"
-                  accept=".pdf"
-                  onChange={handleFileInput}
-                />
-                <div className="w-full text-center">
-                  <p className="text-sm text-gray-500">
-                    Drop PDF files here or{" "}
-                    <span className="text-blue-600 hover:text-blue-700">
-                      browse
-                    </span>
-                  </p>
+                <div className="flex-shrink-0 mr-3">
+                  <div className="text-xs font-medium bg-gray-100 px-2 py-1 rounded">
+                    PDF
+                  </div>
                 </div>
-              </label>
-            </div>
-          </div>
+                <div className="flex-1 min-w-0 mr-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-900 break-all pr-4">
+                      {upload.file.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeFile(upload.file)}
+                  className="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-500"
+                  aria-label="Remove file"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
 
-          <div className="flex justify-end space-x-3 mt-4">
+          <div className="flex justify-end space-x-3 mt-6">
             <Button
               variant="outline"
               onClick={() => {
                 setUploads([]);
                 onClose();
               }}
+              className="px-6"
             >
               Cancel
             </Button>
             <Button
               onClick={() => {
-                toast({
-                  title: "Files uploaded",
-                  description: "Files have been successfully uploaded."
-                });
-                setUploads([]);
-                onClose();
+                if (uploads.length > 0) {
+                  toast({
+                    title: "Success",
+                    description: "Files have been successfully uploaded."
+                  });
+                  setUploads([]);
+                  onClose();
+                }
               }}
+              className="px-6"
+              disabled={uploads.length === 0}
             >
-              Add files
+              Upload files
             </Button>
           </div>
         </div>

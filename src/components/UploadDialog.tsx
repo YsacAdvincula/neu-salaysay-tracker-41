@@ -16,6 +16,8 @@ interface FileUpload {
   status: 'pending' | 'uploading' | 'completed' | 'error';
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+
 export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
   const [uploads, setUploads] = useState<FileUpload[]>([]);
   const { toast } = useToast();
@@ -32,6 +34,15 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
           variant: "destructive",
           title: "Invalid file type",
           description: "Please upload only PDF files."
+        });
+        return;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Maximum file size is 5MB."
         });
         return;
       }
@@ -92,12 +103,6 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
           <DialogTitle className="text-xl font-semibold">
             Upload files
           </DialogTitle>
-          <button 
-            onClick={onClose} 
-            className="absolute right-4 top-4 hover:bg-gray-100 rounded-full p-1"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -120,7 +125,7 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
                     </span>
                   </span>
                   <p className="text-xs text-gray-400 mt-1">
-                    Maximum file size: 10MB
+                    Maximum file size: 5MB
                   </p>
                 </label>
               </div>

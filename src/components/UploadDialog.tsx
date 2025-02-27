@@ -4,6 +4,7 @@ import { Upload, X, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UploadDialogProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
     handleFiles(files);
   };
 
-  const handleFiles = (files: File[]) => {
+  const handleFiles = async (files: File[]) => {
     for (const file of files) {
       if (file.type !== 'application/pdf') {
         toast({
@@ -53,12 +54,11 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
         status: 'pending'
       }]);
 
-      // Simulate upload progress
-      simulateUpload(file);
+      await uploadToSupabase(file);
     }
   };
 
-  const simulateUpload = (file: File) => {
+  const uploadToSupabase = async (file: File) => {
     setUploads(prev => 
       prev.map(upload => 
         upload.file === file 
@@ -67,26 +67,60 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
       )
     );
 
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
+    try {
+      // Generate a unique filename to avoid conflicts
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
       
+      const { error, data } = await supabase.storage
+        .from('salaysay-uploads')
+        .upload(fileName, file, {
+          onUploadProgress: (progress) => {
+            const percentage = (progress.loaded / progress.total) * 100;
+            setUploads(prev => 
+              prev.map(upload => 
+                upload.file === file 
+                  ? {
+                      ...upload,
+                      progress: percentage,
+                      status: percentage >= 100 ? 'completed' : 'uploading'
+                    }
+                  : upload
+              )
+            );
+          }
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Update status to completed after successful upload
       setUploads(prev => 
         prev.map(upload => 
           upload.file === file 
-            ? {
-                ...upload,
-                progress,
-                status: progress >= 100 ? 'completed' : 'uploading'
-              }
+            ? { ...upload, status: 'completed', progress: 100 }
             : upload
         )
       );
 
-      if (progress >= 100) {
-        clearInterval(interval);
-      }
-    }, 500);
+      console.log('File uploaded successfully:', data.path);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setUploads(prev => 
+        prev.map(upload => 
+          upload.file === file 
+            ? { ...upload, status: 'error' }
+            : upload
+        )
+      );
+
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: "There was an error uploading your file. Please try again."
+      });
+    }
   };
 
   const removeFile = (fileToRemove: File) => {

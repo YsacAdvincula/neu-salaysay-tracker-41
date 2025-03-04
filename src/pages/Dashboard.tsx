@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [userProfile, setUserProfile] = useState<{
     email: string | null;
     fullName: string | null;
@@ -104,6 +105,11 @@ export default function Dashboard() {
     setIsUploadDialogOpen(true);
   };
 
+  // Function to trigger refresh of the FileExplorer
+  const refreshFileExplorer = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
   // Get user's initials for avatar fallback
   const getInitials = () => {
     if (!userProfile.fullName) return "U";
@@ -167,7 +173,7 @@ export default function Dashboard() {
 
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Your Salaysay Files</h2>
-            {userProfile.id && <FileExplorer userId={userProfile.id} />}
+            {userProfile.id && <FileExplorer userId={userProfile.id} refreshTrigger={refreshTrigger} />}
           </div>
         </div>
       </div>
@@ -176,6 +182,7 @@ export default function Dashboard() {
         isOpen={isUploadDialogOpen}
         onClose={() => setIsUploadDialogOpen(false)}
         userId={userProfile.id || ""}
+        onUploadComplete={refreshFileExplorer}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -16,7 +15,7 @@ interface SalaysayFile {
   fileName: string;
 }
 
-export function FileExplorer({ userId }: { userId: string }) {
+export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; refreshTrigger?: number }) {
   const [files, setFiles] = useState<SalaysayFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingFile, setViewingFile] = useState<string | null>(null);
@@ -28,7 +27,7 @@ export function FileExplorer({ userId }: { userId: string }) {
     if (userId) {
       fetchFiles();
     }
-  }, [userId]);
+  }, [userId, refreshTrigger]);
 
   const fetchFiles = async () => {
     try {
@@ -187,7 +186,6 @@ export function FileExplorer({ userId }: { userId: string }) {
         </div>
       </div>
       
-      {/* Hidden div for PDF viewer (not used now as we're opening in a new tab) */}
       <div ref={fileViewerRef} className="hidden"></div>
     </div>
   );

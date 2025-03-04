@@ -14,9 +14,10 @@ interface UploadDialogProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  onUploadComplete?: () => void;
 }
 
-export function UploadDialog({ isOpen, onClose, userId }: UploadDialogProps) {
+export function UploadDialog({ isOpen, onClose, userId, onUploadComplete }: UploadDialogProps) {
   const [selectedViolationType, setSelectedViolationType] = useState<string>("");
   const { toast } = useToast();
   const { uploads, addFiles, removeFile, uploadToSupabase } = useFileUpload(userId);
@@ -44,10 +45,12 @@ export function UploadDialog({ isOpen, onClose, userId }: UploadDialogProps) {
     for (const upload of pendingUploads) {
       await uploadToSupabase(upload.file, selectedViolationType);
     }
+    
+    // Trigger refresh of file explorer after upload completes
+    if (onUploadComplete) {
+      onUploadComplete();
+    }
   };
-
-  const allUploadsCompleted = uploads.length > 0 && 
-    uploads.every(upload => upload.status === 'completed');
 
   const handleClose = () => {
     addFiles([]);

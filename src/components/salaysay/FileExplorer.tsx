@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileIcon, Eye, Download, Loader2 } from "lucide-react";
+import { FileIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface SalaysayFile {
   id: string;
@@ -20,7 +20,8 @@ export function FileExplorer({ userId }: { userId: string }) {
   const [files, setFiles] = useState<SalaysayFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingFile, setViewingFile] = useState<string | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [viewError, setViewError] = useState<string | null>(null);
+  const fileViewerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,18 +65,22 @@ export function FileExplorer({ userId }: { userId: string }) {
   const handleViewFile = async (filePath: string, fileId: string) => {
     try {
       setViewingFile(fileId);
+      setViewError(null);
+      
+      // Create a longer-lived URL (10 minutes) to allow time for viewing
       const { data, error } = await supabase.storage
         .from('salaysay-uploads')
-        .createSignedUrl(filePath, 60); // 60 seconds expiry
+        .createSignedUrl(filePath, 600);
 
       if (error) {
         throw error;
       }
 
-      setFileUrl(data.signedUrl);
+      // Open the file in a new tab/window
       window.open(data.signedUrl, '_blank');
     } catch (error) {
       console.error('Error viewing file:', error);
+      setViewError("There was an error opening the file. Please try again.");
       toast({
         variant: "destructive",
         title: "Failed to view file",
@@ -125,59 +130,65 @@ export function FileExplorer({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="px-4 py-2 text-left font-medium">File Name</th>
-              <th className="px-4 py-2 text-left font-medium">Date Uploaded</th>
-              <th className="px-4 py-2 text-left font-medium">Violation Type</th>
-              <th className="px-4 py-2 text-left font-medium">Status</th>
-              <th className="px-4 py-2 text-left font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {files.map((file) => (
-              <tr key={file.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 flex items-center">
-                  <FileIcon className="h-5 w-5 text-red-500 mr-2" />
-                  <span className="font-medium text-gray-800 truncate max-w-[250px]">
-                    {file.fileName}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-600">
-                  {formatDate(file.created_at)}
-                </td>
-                <td className="px-4 py-3 text-gray-600">
-                  {file.violation_type}
-                </td>
-                <td className={`px-4 py-3 ${getStatusColor(file.status)}`}>
-                  {file.status.replace('_', ' ')}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+    <div className="space-y-4">
+      {viewError && (
+        <Alert variant="destructive">
+          <AlertTitle>Failed to view file</AlertTitle>
+          <AlertDescription>{viewError}</AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-100 text-gray-700">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">File Name</th>
+                <th className="px-4 py-2 text-left font-medium">Date Uploaded</th>
+                <th className="px-4 py-2 text-left font-medium">Violation Type</th>
+                <th className="px-4 py-2 text-left font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {files.map((file) => (
+                <tr key={file.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <button 
+                      className="flex items-center text-left focus:outline-none group"
                       onClick={() => handleViewFile(file.file_path, file.id)}
                       disabled={viewingFile === file.id}
                     >
-                      {viewingFile === file.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                      ) : (
-                        <Eye className="h-4 w-4 mr-1" />
-                      )}
-                      View
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      <FileIcon className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+                      <span className="font-medium text-blue-600 group-hover:text-blue-800 group-hover:underline truncate max-w-[250px]">
+                        {viewingFile === file.id ? (
+                          <span className="flex items-center">
+                            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            Opening...
+                          </span>
+                        ) : (
+                          file.fileName
+                        )}
+                      </span>
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {formatDate(file.created_at)}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {file.violation_type}
+                  </td>
+                  <td className={`px-4 py-3 ${getStatusColor(file.status)}`}>
+                    {file.status.replace('_', ' ')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+      
+      {/* Hidden div for PDF viewer (not used now as we're opening in a new tab) */}
+      <div ref={fileViewerRef} className="hidden"></div>
     </div>
   );
 }

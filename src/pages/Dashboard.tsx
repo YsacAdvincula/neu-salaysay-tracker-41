@@ -4,21 +4,59 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Send } from "lucide-react";
+import { Send, User } from "lucide-react";
 import { UploadDialog } from "@/components/UploadDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<{
+    email: string | null;
+    fullName: string | null;
+    avatarUrl: string | null;
+  }>({
+    email: null,
+    fullName: null,
+    avatarUrl: null,
+  });
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/');
+        return;
+      }
+
+      // Set the user email from the session
+      setUserProfile(prev => ({ ...prev, email: session.user.email }));
+
+      // Fetch user profile from the profiles table
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user profile:", error);
+      } else if (profileData) {
+        setUserProfile({
+          email: session.user.email,
+          fullName: profileData.full_name || session.user.user_metadata?.full_name || "User",
+          avatarUrl: profileData.avatar_url,
+        });
       }
     };
+    
     checkUser();
   }, [navigate]);
 
@@ -39,18 +77,51 @@ export default function Dashboard() {
     setIsUploadDialogOpen(true);
   };
 
+  // Get user's initials for avatar fallback
+  const getInitials = () => {
+    if (!userProfile.fullName) return "U";
+    return userProfile.fullName
+      .split(" ")
+      .map(name => name[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Welcome to SALAYSAY TRACKER APP</h1>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            className="bg-white hover:bg-gray-100"
-          >
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-pointer">
+                    <Avatar>
+                      <AvatarImage src={userProfile.avatarUrl || ""} alt={userProfile.fullName || "User"} />
+                      <AvatarFallback className="bg-gray-200 text-gray-700">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white p-3 shadow-lg border rounded-md">
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm">{userProfile.fullName || "User"}</p>
+                    <p className="text-xs text-gray-500">{userProfile.email}</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="bg-white hover:bg-gray-100"
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Dashboard</h2>

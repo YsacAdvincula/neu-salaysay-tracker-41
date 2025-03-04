@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Send, User } from "lucide-react";
 import { UploadDialog } from "@/components/UploadDialog";
+import { FileExplorer } from "@/components/salaysay/FileExplorer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -116,7 +117,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Welcome to SALAYSAY TRACKER APP</h1>
           <div className="flex items-center gap-2">
@@ -149,17 +150,28 @@ export default function Dashboard() {
             </Button>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
-          <p className="text-gray-600 mb-6">
-            Welcome to your dashboard. This is where you'll manage your salaysay activities.
-          </p>
-          <Button onClick={handleSubmitSalaysay} className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            Submit Salaysay
-          </Button>
+        
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Dashboard</h2>
+              <Button onClick={handleSubmitSalaysay} className="flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                Submit Salaysay
+              </Button>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Here you can view all your submitted salaysay documents and upload new ones.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">Your Salaysay Files</h2>
+            {userProfile.id && <FileExplorer userId={userProfile.id} />}
+          </div>
         </div>
       </div>
+      
       <UploadDialog 
         isOpen={isUploadDialogOpen}
         onClose={() => setIsUploadDialogOpen(false)}

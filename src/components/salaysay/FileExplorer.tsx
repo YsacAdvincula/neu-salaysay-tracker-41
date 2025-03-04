@@ -13,6 +13,7 @@ interface SalaysayFile {
   violation_type: string;
   status: string;
   fileName: string;
+  user_id: string; // Added this field to match the database schema
 }
 
 export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; refreshTrigger?: number }) {

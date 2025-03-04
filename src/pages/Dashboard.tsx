@@ -22,10 +22,12 @@ export default function Dashboard() {
     email: string | null;
     fullName: string | null;
     avatarUrl: string | null;
+    id: string | null;
   }>({
     email: null,
     fullName: null,
     avatarUrl: null,
+    id: null,
   });
 
   useEffect(() => {
@@ -37,7 +39,14 @@ export default function Dashboard() {
       }
 
       // Set the user email from the session
-      setUserProfile(prev => ({ ...prev, email: session.user.email }));
+      setUserProfile(prev => ({ 
+        ...prev, 
+        email: session.user.email,
+        id: session.user.id
+      }));
+
+      // Check if user has Google avatar in metadata
+      const avatarUrl = session.user.user_metadata?.avatar_url || null;
 
       // Fetch user profile from the profiles table
       const { data: profileData, error } = await supabase
@@ -48,13 +57,30 @@ export default function Dashboard() {
 
       if (error) {
         console.error("Error fetching user profile:", error);
-      } else if (profileData) {
-        setUserProfile({
-          email: session.user.email,
-          fullName: profileData.full_name || session.user.user_metadata?.full_name || "User",
-          avatarUrl: profileData.avatar_url,
-        });
+        
+        // If profile doesn't exist but we have Google data, create one
+        if (avatarUrl) {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: session.user.id,
+              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || "User",
+              email: session.user.email,
+              avatar_url: avatarUrl,
+            });
+            
+          if (updateError) {
+            console.error("Error creating profile:", updateError);
+          }
+        }
       }
+
+      setUserProfile({
+        email: session.user.email,
+        fullName: profileData?.full_name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || "User",
+        avatarUrl: avatarUrl || profileData?.avatar_url || null,
+        id: session.user.id,
+      });
     };
     
     checkUser();
@@ -137,6 +163,7 @@ export default function Dashboard() {
       <UploadDialog 
         isOpen={isUploadDialogOpen}
         onClose={() => setIsUploadDialogOpen(false)}
+        userId={userProfile.id || ""}
       />
     </div>
   );

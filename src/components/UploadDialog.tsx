@@ -1,25 +1,40 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, X, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface UploadDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  userId: string;
 }
 
 interface FileUpload {
   file: File;
   progress: number;
   status: 'pending' | 'uploading' | 'completed' | 'error';
+  violationType?: string;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
-export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
+const VIOLATION_TYPES = [
+  "Attendance Issue",
+  "Dress Code Violation",
+  "Academic Misconduct",
+  "Behavioral Issue",
+  "Property Damage",
+  "Other"
+];
+
+export function UploadDialog({ isOpen, onClose, userId }: UploadDialogProps) {
   const [uploads, setUploads] = useState<FileUpload[]>([]);
+  const [selectedViolationType, setSelectedViolationType] = useState<string>("");
   const { toast } = useToast();
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,12 +67,28 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
         progress: 0,
         status: 'pending'
       }]);
-
-      await uploadToSupabase(file);
     }
   };
 
-  const uploadToSupabase = async (file: File) => {
+  const uploadToSupabase = async (file: File, violationType: string) => {
+    if (!violationType) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please select a violation type."
+      });
+      return;
+    }
+
+    if (!userId) {
+      toast({
+        variant: "destructive",
+        title: "Authentication error",
+        description: "User ID not found. Please log in again."
+      });
+      return;
+    }
+
     setUploads(prev => 
       prev.map(upload => 
         upload.file === file 
@@ -81,29 +112,51 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
         )
       );
 
-      // First, check if the bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      console.log('Available buckets:', buckets);
-
-      const { error, data } = await supabase.storage
+      // Upload the file to storage
+      const { error: uploadError, data } = await supabase.storage
         .from('salaysay-uploads')
         .upload(fileName, file);
 
-      if (error) {
-        console.error('Supabase upload error:', error);
-        throw error;
+      if (uploadError) {
+        console.error('Supabase upload error:', uploadError);
+        throw uploadError;
       }
 
-      // Update status to completed after successful upload
       setUploads(prev => 
         prev.map(upload => 
           upload.file === file 
-            ? { ...upload, status: 'completed', progress: 100 }
+            ? { ...upload, progress: 66 }
             : upload
         )
       );
 
-      console.log('File uploaded successfully:', data.path);
+      const filePath = data.path;
+
+      // Insert record into salaysay_submissions table
+      const { error: insertError } = await supabase
+        .from('salaysay_submissions')
+        .insert({
+          user_id: userId,
+          file_path: filePath,
+          violation_type: violationType,
+          status: 'pending_review'
+        });
+
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        throw insertError;
+      }
+
+      // Update status to completed after successful upload and database insert
+      setUploads(prev => 
+        prev.map(upload => 
+          upload.file === file 
+            ? { ...upload, status: 'completed', progress: 100, violationType }
+            : upload
+        )
+      );
+
+      console.log('File uploaded and recorded successfully:', data.path);
     } catch (error) {
       console.error('Detailed upload error:', error);
       setUploads(prev => 
@@ -121,6 +174,8 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
           errorMessage = "Storage bucket not found. Please contact support.";
         } else if (error.message.includes("permission")) {
           errorMessage = "Permission denied. Please check your authentication status.";
+        } else if (error.message.includes("foreign key")) {
+          errorMessage = "Database relation error. User profile may not exist.";
         }
       }
 
@@ -136,19 +191,69 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
     setUploads(prev => prev.filter(upload => upload.file !== fileToRemove));
   };
 
+  const handleUpload = async () => {
+    if (!selectedViolationType) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please select a violation type."
+      });
+      return;
+    }
+
+    const pendingUploads = uploads.filter(upload => upload.status === 'pending');
+    
+    if (pendingUploads.length === 0) {
+      toast({
+        title: "No files to upload",
+        description: "Please select files to upload."
+      });
+      return;
+    }
+
+    for (const upload of pendingUploads) {
+      await uploadToSupabase(upload.file, selectedViolationType);
+    }
+  };
+
   const allUploadsCompleted = uploads.length > 0 && 
     uploads.every(upload => upload.status === 'completed');
 
+  const handleClose = () => {
+    setUploads([]);
+    setSelectedViolationType("");
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Upload files
+            Upload Salaysay
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="violation-type">Violation Type</Label>
+            <Select 
+              value={selectedViolationType} 
+              onValueChange={setSelectedViolationType}
+            >
+              <SelectTrigger id="violation-type" className="w-full">
+                <SelectValue placeholder="Select violation type" />
+              </SelectTrigger>
+              <SelectContent>
+                {VIOLATION_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           {uploads.length === 0 ? (
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
               <div className="flex flex-col items-center gap-3">
@@ -203,6 +308,11 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
                           />
                         </div>
                       )}
+                      {upload.status === 'completed' && upload.violationType && (
+                        <p className="text-xs text-gray-500">
+                          Type: {upload.violationType}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {upload.status !== 'uploading' && (
@@ -222,30 +332,27 @@ export function UploadDialog({ isOpen, onClose }: UploadDialogProps) {
           <div className="flex justify-end space-x-3 mt-6">
             <Button
               variant="outline"
-              onClick={() => {
-                setUploads([]);
-                onClose();
-              }}
+              onClick={handleClose}
               className="px-6"
             >
               Cancel
             </Button>
-            <Button
-              onClick={() => {
-                if (allUploadsCompleted) {
-                  toast({
-                    title: "Success",
-                    description: "All files have been successfully uploaded."
-                  });
-                  setUploads([]);
-                  onClose();
-                }
-              }}
-              className="px-6"
-              disabled={!allUploadsCompleted}
-            >
-              Upload files
-            </Button>
+            {allUploadsCompleted ? (
+              <Button
+                onClick={handleClose}
+                className="px-6"
+              >
+                Done
+              </Button>
+            ) : (
+              <Button
+                onClick={handleUpload}
+                className="px-6"
+                disabled={uploads.length === 0 || !selectedViolationType}
+              >
+                Upload files
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -45,6 +46,23 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
     }
   };
 
+  const deleteOrphanedRecord = async (fileId: string) => {
+    try {
+      const { error } = await supabase
+        .from('salaysay_submissions')
+        .delete()
+        .eq('id', fileId);
+      
+      if (error) {
+        console.error('Error deleting orphaned record:', error);
+      } else {
+        console.log('Successfully deleted orphaned record:', fileId);
+      }
+    } catch (error) {
+      console.error('Exception when deleting orphaned record:', error);
+    }
+  };
+
   const fetchFiles = async () => {
     try {
       setLoading(true);
@@ -58,22 +76,24 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
         throw error;
       }
 
-      // Process and filter files that exist in storage
-      const existingFiles = await Promise.all(
+      // Process files and check existence in storage
+      const filesWithExistenceCheck = await Promise.all(
         data.map(async (file) => {
           const exists = await checkFileExists(file.file_path);
-          if (exists) {
-            return {
-              ...file,
-              fileName: file.file_path.split('/').pop() || file.file_path
-            };
+          if (!exists) {
+            // If file doesn't exist in storage, delete it from the database
+            await deleteOrphanedRecord(file.id);
+            return null;
           }
-          return null;
+          return {
+            ...file,
+            fileName: file.file_path.split('/').pop() || file.file_path
+          };
         })
       );
 
       // Filter out null values (files that don't exist)
-      setFiles(existingFiles.filter((file): file is SalaysayFile => file !== null));
+      setFiles(filesWithExistenceCheck.filter((file): file is SalaysayFile => file !== null));
     } catch (error) {
       console.error('Error fetching files:', error);
       toast({

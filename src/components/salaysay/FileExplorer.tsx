@@ -29,6 +29,21 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
     }
   }, [userId, refreshTrigger]);
 
+  const checkFileExists = async (filePath: string): Promise<boolean> => {
+    try {
+      const { data } = await supabase.storage
+        .from('salaysay-uploads')
+        .list(filePath.split('/').slice(0, -1).join('/'), {
+          search: filePath.split('/').pop()
+        });
+      
+      return data !== null && data.length > 0;
+    } catch (error) {
+      console.error('Error checking file existence:', error);
+      return false;
+    }
+  };
+
   const fetchFiles = async () => {
     try {
       setLoading(true);
@@ -42,13 +57,22 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
         throw error;
       }
 
-      // Process data to add fileName from file_path
-      const processedData = data.map(file => ({
-        ...file,
-        fileName: file.file_path.split('/').pop() || file.file_path
-      }));
+      // Process and filter files that exist in storage
+      const existingFiles = await Promise.all(
+        data.map(async (file) => {
+          const exists = await checkFileExists(file.file_path);
+          if (exists) {
+            return {
+              ...file,
+              fileName: file.file_path.split('/').pop() || file.file_path
+            };
+          }
+          return null;
+        })
+      );
 
-      setFiles(processedData);
+      // Filter out null values (files that don't exist)
+      setFiles(existingFiles.filter((file): file is SalaysayFile => file !== null));
     } catch (error) {
       console.error('Error fetching files:', error);
       toast({

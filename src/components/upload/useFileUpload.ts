@@ -51,7 +51,8 @@ export function useFileUpload(userId: string) {
     try {
       const timestamp = Date.now();
       const originalName = file.name;
-      const fileName = `${timestamp}_${originalName}`;
+      // Create a path with user's ID as the folder name
+      const filePath = `${userId}/${timestamp}_${originalName}`;
       
       setUploads(prev => 
         prev.map(upload => 
@@ -63,7 +64,7 @@ export function useFileUpload(userId: string) {
 
       const { error: uploadError, data } = await supabase.storage
         .from('salaysay-uploads')
-        .upload(fileName, file);
+        .upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;

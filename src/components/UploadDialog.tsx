@@ -22,6 +22,10 @@ export function UploadDialog({ isOpen, onClose, userId, onUploadComplete }: Uplo
   const { toast } = useToast();
   const { uploads, addFiles, removeFile, uploadToSupabase } = useFileUpload(userId);
 
+  // Add the missing variable definition
+  const allUploadsCompleted = uploads.length > 0 && 
+    uploads.every(upload => upload.status === 'completed');
+
   const handleUpload = async () => {
     if (!selectedViolationType) {
       toast({

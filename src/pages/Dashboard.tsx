@@ -134,9 +134,9 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/1662da6e-c745-4b96-a54c-d177ff86c299.png" 
+              src="/lovable-uploads/1124a8c6-3ef9-421e-9bb9-00387d87309b.png" 
               alt="NEU Logo" 
-              className="w-10 h-10"
+              className="w-16 h-16"
             />
             <h1 className="text-3xl font-bold text-gray-800">Welcome to NEU-STAT</h1>
           </div>

@@ -1,7 +1,8 @@
+
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { FileIcon, Loader2, Trash2 } from "lucide-react";
+import { FileIcon, Loader2, Trash2, Users } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -16,6 +17,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SalaysayFile {
   id: string;
@@ -25,9 +32,20 @@ interface SalaysayFile {
   status: string;
   fileName: string;
   user_id: string;
+  user_email?: string;
 }
 
-export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; refreshTrigger?: number }) {
+interface FileExplorerProps {
+  userId: string;
+  refreshTrigger?: number;
+  showAllUsers?: boolean;
+}
+
+export function FileExplorer({ 
+  userId, 
+  refreshTrigger = 0, 
+  showAllUsers = false 
+}: FileExplorerProps) {
   const [files, setFiles] = useState<SalaysayFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingFile, setViewingFile] = useState<string | null>(null);
@@ -42,7 +60,7 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
     if (userId) {
       fetchFiles();
     }
-  }, [userId, refreshTrigger]);
+  }, [userId, refreshTrigger, showAllUsers]);
 
   const checkFileExists = async (filePath: string): Promise<boolean> => {
     try {
@@ -79,11 +97,24 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Create the query based on whether we want all users or just the current user
+      let query = supabase
         .from('salaysay_submissions')
-        .select('*')
-        .eq('user_id', userId)
+        .select(`
+          *,
+          profiles:user_id (
+            email
+          )
+        `)
         .order('created_at', { ascending: false });
+      
+      // Only filter by user_id if not showing all users
+      if (!showAllUsers) {
+        query = query.eq('user_id', userId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -98,7 +129,8 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
           }
           return {
             ...file,
-            fileName: file.file_path.split('/').pop() || file.file_path
+            fileName: file.file_path.split('/').pop() || file.file_path,
+            user_email: file.profiles?.email
           };
         })
       );
@@ -212,6 +244,11 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
     }
   };
 
+  // Determine if the user can delete a file (only if it's their own)
+  const canDeleteFile = (fileUserId: string) => {
+    return fileUserId === userId;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -224,7 +261,7 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
   if (files.length === 0) {
     return (
       <Card className="p-6 text-center">
-        <p className="text-gray-500">No salaysay files uploaded yet.</p>
+        <p className="text-gray-500">No salaysay files {showAllUsers ? "" : "uploaded yet"}.</p>
       </Card>
     );
   }
@@ -247,6 +284,9 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
                 <th className="px-4 py-2 text-left font-medium">Date Uploaded</th>
                 <th className="px-4 py-2 text-left font-medium">Violation Type</th>
                 <th className="px-4 py-2 text-left font-medium">Status</th>
+                {showAllUsers && (
+                  <th className="px-4 py-2 text-left font-medium">Uploaded By</th>
+                )}
                 <th className="px-4 py-2 text-left font-medium">Actions</th>
               </tr>
             </thead>
@@ -281,21 +321,40 @@ export function FileExplorer({ userId, refreshTrigger = 0 }: { userId: string; r
                   <td className={`px-4 py-3 ${getStatusColor(file.status)}`}>
                     {file.status.replace('_', ' ')}
                   </td>
+                  {showAllUsers && (
+                    <td className="px-4 py-3 text-gray-600">
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-1 text-gray-400" />
+                        {file.user_email || "Unknown user"}
+                      </div>
+                    </td>
+                  )}
                   <td className="px-4 py-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteClick(file)}
-                      disabled={isDeleting && deletingFile?.id === file.id}
-                    >
-                      {isDeleting && deletingFile?.id === file.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    {canDeleteFile(file.user_id) && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteClick(file)}
+                              disabled={isDeleting && deletingFile?.id === file.id}
+                            >
+                              {isDeleting && deletingFile?.id === file.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete file</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </td>
                 </tr>
               ))}

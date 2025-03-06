@@ -2,7 +2,7 @@
 import { Upload } from "lucide-react";
 import { MAX_FILE_SIZE } from "./types";
 import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface DropZoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -11,6 +11,22 @@ interface DropZoneProps {
 export function DropZone({ onFilesSelected }: DropZoneProps) {
   const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
+
+  // Prevent the browser from opening PDFs when dropped outside the drop zone
+  useEffect(() => {
+    const preventDefaults = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    document.addEventListener('dragover', preventDefaults);
+    document.addEventListener('drop', preventDefaults);
+
+    return () => {
+      document.removeEventListener('dragover', preventDefaults);
+      document.removeEventListener('drop', preventDefaults);
+    };
+  }, []);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];

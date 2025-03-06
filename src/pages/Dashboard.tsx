@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, User } from "lucide-react";
+import { Send, User, Users } from "lucide-react";
 import { UploadDialog } from "@/components/UploadDialog";
 import { FileExplorer } from "@/components/salaysay/FileExplorer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,12 +14,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showAllUsers, setShowAllUsers] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     email: string | null;
     fullName: string | null;
@@ -121,6 +124,10 @@ export default function Dashboard() {
       .substring(0, 2);
   };
 
+  const toggleShowAllUsers = () => {
+    setShowAllUsers(prev => !prev);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white p-8">
       <div className="max-w-6xl mx-auto">
@@ -172,8 +179,27 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Your Salaysay Files</h2>
-            {userProfile.id && <FileExplorer userId={userProfile.id} refreshTrigger={refreshTrigger} />}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Your Salaysay Files</h2>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="show-all-users" className="text-sm flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Show all users' files
+                </Label>
+                <Switch 
+                  id="show-all-users" 
+                  checked={showAllUsers} 
+                  onCheckedChange={toggleShowAllUsers}
+                />
+              </div>
+            </div>
+            {userProfile.id && (
+              <FileExplorer 
+                userId={userProfile.id} 
+                refreshTrigger={refreshTrigger} 
+                showAllUsers={showAllUsers}
+              />
+            )}
           </div>
         </div>
       </div>

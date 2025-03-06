@@ -102,7 +102,7 @@ export default function Index() {
           <CardContent className="p-0 space-y-6">
             <div className="flex justify-center">
               <img 
-                src="/lovable-uploads/1124a8c6-3ef9-421e-9bb9-00387d87309b.png" 
+                src="/lovable-uploads/42a0c089-7817-4d54-b180-12a27a76a70f.png" 
                 alt="NEU Logo" 
                 className="w-36 h-36"
               />

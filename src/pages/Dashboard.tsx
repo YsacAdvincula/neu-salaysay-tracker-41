@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,17 +42,14 @@ export default function Dashboard() {
         return;
       }
 
-      // Set the user email from the session
       setUserProfile(prev => ({ 
         ...prev, 
         email: session.user.email,
         id: session.user.id
       }));
 
-      // Check if user has Google avatar in metadata
       const avatarUrl = session.user.user_metadata?.avatar_url || null;
 
-      // Fetch user profile from the profiles table
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
@@ -63,7 +59,6 @@ export default function Dashboard() {
       if (error) {
         console.error("Error fetching user profile:", error);
         
-        // If profile doesn't exist but we have Google data, create one
         if (avatarUrl) {
           const { error: updateError } = await supabase
             .from('profiles')
@@ -108,12 +103,10 @@ export default function Dashboard() {
     setIsUploadDialogOpen(true);
   };
 
-  // Function to trigger refresh of the FileExplorer
   const refreshFileExplorer = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  // Get user's initials for avatar fallback
   const getInitials = () => {
     if (!userProfile.fullName) return "U";
     return userProfile.fullName
@@ -134,7 +127,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/1124a8c6-3ef9-421e-9bb9-00387d87309b.png" 
+              src="/lovable-uploads/42a0c089-7817-4d54-b180-12a27a76a70f.png" 
               alt="NEU Logo" 
               className="w-16 h-16"
             />

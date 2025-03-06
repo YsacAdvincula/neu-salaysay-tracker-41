@@ -132,7 +132,14 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Welcome to SALAYSAY TRACKER APP</h1>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/1662da6e-c745-4b96-a54c-d177ff86c299.png" 
+              alt="NEU Logo" 
+              className="w-10 h-10"
+            />
+            <h1 className="text-3xl font-bold text-gray-800">Welcome to NEU-STAT</h1>
+          </div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
@@ -167,14 +174,14 @@ export default function Dashboard() {
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Dashboard</h2>
+              <h2 className="text-xl font-semibold">Salaysay Tracking And Archival Tool</h2>
               <Button onClick={handleSubmitSalaysay} className="flex items-center gap-2">
                 <Send className="h-4 w-4" />
                 Submit Salaysay
               </Button>
             </div>
             <p className="text-gray-600 mb-6">
-              Here you can view all your submitted salaysay documents and upload new ones.
+              NEU-STAT is New Era University's official Salaysay Tracking System, enabling seamless submission, monitoring, and approval of Salaysay documents.
             </p>
           </div>
 

@@ -110,10 +110,10 @@ export default function Index() {
             
             <div className="text-center space-y-2">
               <h1 className="text-2xl font-semibold text-gray-800">
-                Welcome to NEU Salaysay Tracker App
+                Welcome to NEU-STAT
               </h1>
               <p className="text-gray-600 text-sm">
-                Sign in with your NEU account to continue
+                Salaysay Tracking And Archival Tool
               </p>
             </div>
 

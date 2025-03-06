@@ -137,8 +137,10 @@ export function FileExplorer({
         })
       );
 
-      // Fix the type predicate to check for null without requiring profiles property
-      setFiles(filesWithExistenceCheck.filter((file): file is SalaysayFile => file !== null));
+      // Fix the type predicate to properly check non-null values
+      setFiles(filesWithExistenceCheck.filter((file): file is SalaysayFile => 
+        file !== null
+      ));
     } catch (error) {
       console.error('Error fetching files:', error);
       toast({

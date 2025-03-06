@@ -33,6 +33,8 @@ interface SalaysayFile {
   fileName: string;
   user_id: string;
   user_email?: string;
+  // Optional profiles property for the raw data from Supabase
+  profiles?: { email: string };
 }
 
 interface FileExplorerProps {
@@ -135,6 +137,7 @@ export function FileExplorer({
         })
       );
 
+      // Fix the type predicate to check for null without requiring profiles property
       setFiles(filesWithExistenceCheck.filter((file): file is SalaysayFile => file !== null));
     } catch (error) {
       console.error('Error fetching files:', error);

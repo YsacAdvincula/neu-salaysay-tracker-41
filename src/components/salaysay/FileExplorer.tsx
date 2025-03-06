@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Define the structure of a file record with all properties optional except the core ones
 interface SalaysayFile {
   id: string;
   created_at: string;
@@ -33,7 +34,6 @@ interface SalaysayFile {
   fileName: string;
   user_id: string;
   user_email?: string;
-  // Optional profiles property for the raw data from Supabase
   profiles?: { email: string };
 }
 
@@ -137,8 +137,8 @@ export function FileExplorer({
         })
       );
 
-      // Fix the type predicate to properly check non-null values
-      setFiles(filesWithExistenceCheck.filter((file): file is SalaysayFile => 
+      // Fix the type predicate by only checking for null
+      setFiles(filesWithExistenceCheck.filter((file): file is NonNullable<typeof file> => 
         file !== null
       ));
     } catch (error) {

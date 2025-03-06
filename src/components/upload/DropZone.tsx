@@ -2,6 +2,7 @@
 import { Upload } from "lucide-react";
 import { MAX_FILE_SIZE } from "./types";
 import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
 
 interface DropZoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -9,6 +10,7 @@ interface DropZoneProps {
 
 export function DropZone({ onFilesSelected }: DropZoneProps) {
   const { toast } = useToast();
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -38,10 +40,40 @@ export function DropZone({ onFilesSelected }: DropZoneProps) {
     onFilesSelected(files);
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFiles(Array.from(files));
+    }
+  };
+
   return (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
+    <div 
+      className={`border-2 border-dashed rounded-lg p-8 transition-colors ${
+        isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="flex flex-col items-center gap-3">
-        <Upload className="h-8 w-8 text-gray-400" />
+        <Upload className={`h-8 w-8 ${isDragging ? "text-blue-500" : "text-gray-400"}`} />
         <label className="w-full cursor-pointer text-center">
           <input
             type="file"

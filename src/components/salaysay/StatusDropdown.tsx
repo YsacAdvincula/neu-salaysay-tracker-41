@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Loader2, ShieldCheck, ShieldX, Clock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -30,21 +29,18 @@ export function StatusDropdown({
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  const statusOptions: { value: StatusOption; label: string; icon: React.ReactNode }[] = [
+  const statusOptions: { value: StatusOption; label: string }[] = [
     { 
       value: "pending_review", 
-      label: "Pending Review", 
-      icon: <Clock className="h-4 w-4 text-yellow-500" /> 
+      label: "Pending Review"
     },
     { 
       value: "approved", 
-      label: "Approved", 
-      icon: <ShieldCheck className="h-4 w-4 text-green-500" /> 
+      label: "Approved"
     },
     { 
       value: "rejected", 
-      label: "Rejected", 
-      icon: <ShieldX className="h-4 w-4 text-red-500" /> 
+      label: "Rejected"
     },
   ];
 
@@ -94,10 +90,6 @@ export function StatusDropdown({
     }
   };
 
-  const getStatusIcon = (statusValue: string) => {
-    return statusOptions.find(option => option.value === statusValue)?.icon;
-  };
-
   if (isUpdating) {
     return (
       <div className="flex items-center">
@@ -109,9 +101,8 @@ export function StatusDropdown({
 
   if (!canEdit) {
     return (
-      <div className={`flex items-center ${getStatusColor(status)}`}>
-        {getStatusIcon(status)}
-        <span className="ml-2">{status.replace('_', ' ')}</span>
+      <div className={`${getStatusColor(status)}`}>
+        <span>{status.replace('_', ' ')}</span>
       </div>
     );
   }
@@ -125,20 +116,15 @@ export function StatusDropdown({
       <SelectTrigger 
         className={`h-8 w-full border-0 bg-transparent focus:ring-0 pl-0 ${getStatusColor(status)}`}
       >
-        <div className="flex items-center">
-          {getStatusIcon(status)}
-          <SelectValue placeholder="Select status" className="ml-2" />
-        </div>
+        <SelectValue placeholder="Select status" />
       </SelectTrigger>
       <SelectContent>
         {statusOptions.map((option) => (
           <SelectItem 
             key={option.value} 
             value={option.value}
-            className="flex items-center"
           >
-            {option.icon}
-            <span className="ml-2">{option.label}</span>
+            {option.label}
           </SelectItem>
         ))}
       </SelectContent>

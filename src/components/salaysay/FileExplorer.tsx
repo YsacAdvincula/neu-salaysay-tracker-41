@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -23,8 +22,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { StatusDropdown } from "./StatusDropdown";
 
-// Define the structure of a file record with all properties optional except the core ones
 interface SalaysayFile {
   id: string;
   created_at: string;
@@ -100,7 +99,6 @@ export function FileExplorer({
     try {
       setLoading(true);
       
-      // Create the query based on whether we want all users or just the current user
       let query = supabase
         .from('salaysay_submissions')
         .select(`
@@ -111,7 +109,6 @@ export function FileExplorer({
         `)
         .order('created_at', { ascending: false });
       
-      // Only filter by user_id if not showing all users
       if (!showAllUsers) {
         query = query.eq('user_id', userId);
       }
@@ -137,7 +134,6 @@ export function FileExplorer({
         })
       );
 
-      // Fix the type predicate by only checking for null
       setFiles(filesWithExistenceCheck.filter((file): file is NonNullable<typeof file> => 
         file !== null
       ));
@@ -228,19 +224,6 @@ export function FileExplorer({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending_review':
-        return 'text-yellow-600';
-      case 'approved':
-        return 'text-green-600';
-      case 'rejected':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'dd/MM/yyyy h:mm a');
@@ -249,7 +232,10 @@ export function FileExplorer({
     }
   };
 
-  // Determine if the user can delete a file (only if it's their own)
+  const canEditStatus = (fileUserId: string) => {
+    return showAllUsers || fileUserId === userId;
+  };
+
   const canDeleteFile = (fileUserId: string) => {
     return fileUserId === userId;
   };
@@ -323,8 +309,12 @@ export function FileExplorer({
                   <td className="px-4 py-3 text-gray-600">
                     {file.violation_type}
                   </td>
-                  <td className={`px-4 py-3 ${getStatusColor(file.status)}`}>
-                    {file.status.replace('_', ' ')}
+                  <td className="px-4 py-3">
+                    <StatusDropdown 
+                      fileId={file.id}
+                      initialStatus={file.status}
+                      canEdit={canEditStatus(file.user_id)}
+                    />
                   </td>
                   {showAllUsers && (
                     <td className="px-4 py-3 text-gray-600">

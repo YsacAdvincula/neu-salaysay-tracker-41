@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { FileIcon, Loader2, Trash2, Users } from "lucide-react";
+import { FileIcon, Loader2, Trash2, Users, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -36,6 +36,9 @@ interface SalaysayFile {
   profiles?: { email: string };
 }
 
+type SortField = 'fileName' | 'created_at' | 'violation_type' | 'status';
+type SortDirection = 'asc' | 'desc';
+
 interface FileExplorerProps {
   userId: string;
   refreshTrigger?: number;
@@ -54,6 +57,8 @@ export function FileExplorer({
   const [deletingFile, setDeletingFile] = useState<SalaysayFile | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const fileViewerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -240,6 +245,59 @@ export function FileExplorer({
     return fileUserId === userId;
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedFiles = () => {
+    const sortedFiles = [...files];
+    
+    return sortedFiles.sort((a, b) => {
+      let compareA, compareB;
+      
+      switch (sortField) {
+        case 'fileName':
+          compareA = a.fileName.toLowerCase();
+          compareB = b.fileName.toLowerCase();
+          break;
+        case 'created_at':
+          compareA = new Date(a.created_at).getTime();
+          compareB = new Date(b.created_at).getTime();
+          break;
+        case 'violation_type':
+          compareA = a.violation_type.toLowerCase();
+          compareB = b.violation_type.toLowerCase();
+          break;
+        case 'status':
+          compareA = a.status.toLowerCase();
+          compareB = b.status.toLowerCase();
+          break;
+        default:
+          compareA = a.created_at;
+          compareB = b.created_at;
+      }
+      
+      if (sortDirection === 'asc') {
+        return compareA > compareB ? 1 : -1;
+      } else {
+        return compareA < compareB ? 1 : -1;
+      }
+    });
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-4 w-4 ml-1" /> 
+      : <ArrowDown className="h-4 w-4 ml-1" />;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -271,10 +329,42 @@ export function FileExplorer({
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="px-4 py-2 text-left font-medium">File Name</th>
-                <th className="px-4 py-2 text-left font-medium">Date Uploaded</th>
-                <th className="px-4 py-2 text-left font-medium">Violation Type</th>
-                <th className="px-4 py-2 text-left font-medium">Status</th>
+                <th className="px-4 py-2 text-left font-medium">
+                  <button 
+                    className="flex items-center focus:outline-none"
+                    onClick={() => handleSort('fileName')}
+                  >
+                    File Name
+                    <SortIcon field="fileName" />
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
+                  <button 
+                    className="flex items-center focus:outline-none"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    Date Uploaded
+                    <SortIcon field="created_at" />
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
+                  <button 
+                    className="flex items-center focus:outline-none"
+                    onClick={() => handleSort('violation_type')}
+                  >
+                    Violation Type
+                    <SortIcon field="violation_type" />
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left font-medium">
+                  <button 
+                    className="flex items-center focus:outline-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    Status
+                    <SortIcon field="status" />
+                  </button>
+                </th>
                 {showAllUsers && (
                   <th className="px-4 py-2 text-left font-medium">Uploaded By</th>
                 )}
@@ -282,7 +372,7 @@ export function FileExplorer({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {files.map((file) => (
+              {getSortedFiles().map((file) => (
                 <tr key={file.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <button 

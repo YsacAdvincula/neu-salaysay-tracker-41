@@ -34,17 +34,17 @@ export function StatusDropdown({
     { 
       value: "pending_review", 
       label: "Pending Review", 
-      icon: <Clock className="h-4 w-4 text-yellow-500 mr-2" /> 
+      icon: <Clock className="h-4 w-4 text-yellow-500" /> 
     },
     { 
       value: "approved", 
       label: "Approved", 
-      icon: <ShieldCheck className="h-4 w-4 text-green-500 mr-2" /> 
+      icon: <ShieldCheck className="h-4 w-4 text-green-500" /> 
     },
     { 
       value: "rejected", 
       label: "Rejected", 
-      icon: <ShieldX className="h-4 w-4 text-red-500 mr-2" /> 
+      icon: <ShieldX className="h-4 w-4 text-red-500" /> 
     },
   ];
 
@@ -111,7 +111,7 @@ export function StatusDropdown({
     return (
       <div className={`flex items-center ${getStatusColor(status)}`}>
         {getStatusIcon(status)}
-        <span>{status.replace('_', ' ')}</span>
+        <span className="ml-2">{status.replace('_', ' ')}</span>
       </div>
     );
   }
@@ -127,7 +127,7 @@ export function StatusDropdown({
       >
         <div className="flex items-center">
           {getStatusIcon(status)}
-          <SelectValue placeholder="Select status" />
+          <SelectValue placeholder="Select status" className="ml-2" />
         </div>
       </SelectTrigger>
       <SelectContent>
@@ -139,7 +139,7 @@ export function StatusDropdown({
           >
             <div className="flex items-center">
               {option.icon}
-              <span>{option.label}</span>
+              <span className="ml-2">{option.label}</span>
             </div>
           </SelectItem>
         ))}
